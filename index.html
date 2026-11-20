@@ -1,0 +1,137 @@
+<!DOCTYPE html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>FoodWise</title>
+<style>
+:root{--bg:#f4f7f1;--cd:#fff;--tx:#1b2a1d;--mu:#667a69;--ac:#2e7d32;--wr:#e65100;--rd:#c62828;--bd:#dce5d8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121913;--cd:#1c261e;--tx:#e8efe6;--mu:#97a898;--ac:#66bb6a;--wr:#ffa726;--rd:#ef5350;--bd:#2c3a2e}}
+:root[data-theme="dark"]{--bg:#121913;--cd:#1c261e;--tx:#e8efe6;--mu:#97a898;--ac:#66bb6a;--wr:#ffa726;--rd:#ef5350;--bd:#2c3a2e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:14px 16px;font-weight:700;font-size:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+header small{display:block;font-weight:400;font-size:12px;color:var(--mu)}
+nav{display:flex;gap:6px;overflow-x:auto;padding:0 12px 10px}nav button{flex:none;border:1px solid var(--bd);background:var(--cd);color:var(--tx);padding:7px 12px;border-radius:20px;cursor:pointer;font-size:13px}
+nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+main{padding:0 12px 40px;max-width:900px;margin:auto}
+.c{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.k{font-size:24px;font-weight:700}.m{color:var(--mu);font-size:12px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--bd)}.row:last-child{border:0}
+.b{border:0;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;background:var(--ac);color:#fff;margin:2px}.b.w{background:var(--wr)}.b.r{background:var(--rd)}.b.o{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+.t{font-size:11px;padding:2px 8px;border-radius:10px;color:#fff;background:var(--ac)}.t.w{background:var(--wr)}.t.r{background:var(--rd)}
+input,select{padding:7px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit;width:100%}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+h3{margin:4px 0 8px;font-size:15px}.bar{height:10px;background:var(--rd);border-radius:5px}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+</style></head><body>
+<header><div>🥗 FoodWise<small>Smart Food Lifecycle &amp; Waste Management System</small></div></header>
+<nav id="nav"></nav><main id="v"></main>
+<script>
+var S={items:[],waste:[],used:[],don:[],chk:{},cat:{}},tab='dash',KEY='foodwise_v1';
+try{var raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var TABS=[['dash','🔔 Alerts'],['inv','📦 Stock'],['fefo','🧠 FEFO'],['rec','🍳 Recipe'],['ana','📊 Waste'],['pred','📈 Predict'],['don','♻️ Donate'],['shop','🛒 Shopping']];
+var DEMO={"8901234567890":["Milk","L",2,90,5],"8901234500011":["Egg","pcs",6,14,14],"8901234500022":["Tomato","kg",1,60,4],"8901234500033":["Chicken","kg",1,220,3],"8901234500044":["Rice","kg",5,75,180],"8901234500055":["Onion","kg",2,50,30],"8901234500066":["Potato","kg",2,40,25],"8901234500077":["Bread","pcs",1,50,3]};
+var R=[["Egg Curry (ডিম ভুনা)",["egg","onion","tomato"]],["Chicken Curry",["chicken","onion","potato","tomato"]],["Veg Khichuri",["rice","potato","tomato","onion"]],["Omelette",["egg","onion","tomato"]],["French Toast",["bread","egg","milk"]],["Rice Pudding (পায়েস)",["milk","rice"]],["Potato Mash",["potato","milk"]],["Chicken Fried Rice",["chicken","rice","egg","onion"]],["Tomato Soup",["tomato","onion","milk"]]];
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function today(){var d=new Date();d.setHours(0,0,0,0);return d}
+function ds(d){return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
+function dl(i){return Math.round((new Date(i.exp+'T00:00')-today())/864e5)}
+function tag(i){var d=dl(i);return d<0?'<span class="t r">Expired '+(-d)+'d</span>':d<=3?'<span class="t w">'+d+' day left</span>':'<span class="t">'+d+' days</span>'}
+function money(n){return '৳'+Math.round(n).toLocaleString()}
+function ago(n){var d=today();d.setDate(d.getDate()-n);return ds(d)}
+function low(i){return i.qty<=i.min}
+function daily(name){var s=0,c=today();c.setDate(c.getDate()-14);S.used.forEach(function(u){if(u.n.toLowerCase()==name.toLowerCase()&&new Date(u.d)>=c)s+=u.q});return s/14}
+function go(t){tab=t;draw()}
+function draw(){document.getElementById('nav').innerHTML=TABS.map(function(t){return '<button class="'+(t[0]==tab?'on':'')+'" onclick="go(\''+t[0]+'\')">'+t[1]+'</button>'}).join('');document.getElementById('v').innerHTML=V[tab]()}
+function nm(i){return esc(i.name)+' <span class="m">'+i.qty+' '+esc(i.unit)+'</span>'}
+var V={
+dash:function(){var ex=S.items.filter(function(i){return dl(i)<0}),so=S.items.filter(function(i){return dl(i)>=0&&dl(i)<=3}),lo=S.items.filter(low);
+var h='<div class="g"><div class="c"><div class="k">'+S.items.length+'</div><div class="m">Total items</div></div><div class="c"><div class="k" style="color:var(--rd)">'+ex.length+'</div><div class="m">Expired</div></div><div class="c"><div class="k" style="color:var(--wr)">'+so.length+'</div><div class="m">Expiring ≤3 days</div></div><div class="c"><div class="k">'+lo.length+'</div><div class="m">Low stock</div></div></div>';
+if(!S.items.length)h+='<div class="c">কোনো data নেই। Stock tab এ item add করুন অথবা <button class="b" onclick="demo()">Demo data load</button></div>';
+h+='<div class="c"><h3>🔔 Smart Alerts</h3>';var n=0;
+ex.forEach(function(i){n++;h+='<div class="row"><span>⛔ '+nm(i)+' expire হয়ে গেছে</span><span><button class="b r" onclick="waste('+i.id+')">Waste log</button></span></div>'});
+so.forEach(function(i){n++;h+='<div class="row"><span>⏰ '+nm(i)+' '+tag(i)+'</span><span><button class="b w" onclick="go(\'rec\')">Recipe</button><button class="b o" onclick="go(\'don\')">Donate</button></span></div>'});
+lo.forEach(function(i){n++;h+='<div class="row"><span>📉 '+nm(i)+' stock কম (min '+i.min+')</span><button class="b" onclick="go(\'shop\')">Shopping</button></div>'});
+return h+(n?'':'<div class="m">সব ঠিক আছে ✅</div>')+'</div>'},
+inv:function(){var h='<div class="c"><h3>➕ Add Food / 📷 Scan</h3><div class="tools"><button class="b" onclick="cam()">📷 Camera Scan</button></div><video id="vid" style="display:none;width:100%;border-radius:8px;margin-bottom:8px" playsinline></video><form onsubmit="return add(this)"><input name="code" placeholder="Barcode/QR code" onchange="look(this.form)"><input name="name" placeholder="Food name" required><input name="qty" type="number" step="any" min="0" placeholder="Quantity" required><input name="unit" placeholder="Unit (kg, pcs)" value="pcs"><input name="min" type="number" step="any" placeholder="Min stock" value="1"><input name="price" type="number" step="any" placeholder="Price/unit ৳" required><input name="exp" type="date" required><button class="b" style="padding:9px">Add to stock</button></form><div class="m" style="margin-top:6px">Demo codes: '+Object.keys(DEMO).slice(0,3).join(', ')+'</div></div><div class="c"><h3>📦 Current Stock</h3>';
+S.items.slice().sort(function(a,b){return a.name.localeCompare(b.name)}).forEach(function(i){h+='<div class="row"><span>'+nm(i)+' '+tag(i)+(low(i)?' <span class="t w">Low</span>':'')+'</span><span><button class="b" onclick="use('+i.id+')">Use</button><button class="b w" onclick="waste('+i.id+')">Waste</button><button class="b r" onclick="del('+i.id+')">✕</button></span></div>'});
+return h+(S.items.length?'':'<div class="m">Empty</div>')+'</div>'},
+fefo:function(){var l=S.items.slice().sort(function(a,b){return a.exp<b.exp?-1:1}),h='<div class="c"><h3>🧠 FEFO — First Expire, First Out</h3><div class="m">আগে যেটা expire হবে সেটা আগে ব্যবহার করুন।</div>';
+l.forEach(function(i,k){h+='<div class="row"><span><b>#'+(k+1)+'</b> '+nm(i)+' · '+i.exp+'</span><span>'+tag(i)+(k<3&&dl(i)>=0?' <button class="b" onclick="use('+i.id+')">Use now</button>':'')+'</span></div>'});
+return h+(l.length?'':'<div class="m">No items</div>')+'</div>'},
+rec:function(){var ex=S.items.filter(function(i){return dl(i)>=0&&dl(i)<=5}),all=S.items.map(function(i){return i.name.toLowerCase()});
+var res=R.map(function(r){var hit=r[1].filter(function(k){return ex.some(function(i){return i.name.toLowerCase().indexOf(k)>-1})}),have=r[1].filter(function(k){return all.some(function(a){return a.indexOf(k)>-1})});return{n:r[0],i:r[1],hit:hit,miss:r[1].filter(function(k){return have.indexOf(k)<0})}}).filter(function(r){return r.hit.length}).sort(function(a,b){return b.hit.length-a.hit.length||a.miss.length-b.miss.length});
+var h='<div class="c"><h3>🍳 Expiry-Based Recipes</h3><div class="m">৫ দিনের মধ্যে expire হবে এমন food: '+(ex.map(function(i){return esc(i.name)}).join(', ')||'নেই')+'</div></div>';
+res.forEach(function(r){h+='<div class="c"><b>'+r.n+'</b><div class="m">Use soon: '+r.hit.join(', ')+'</div><div class="m">Ingredients: '+r.i.join(', ')+'</div>'+(r.miss.length?'<div class="m" style="color:var(--wr)">Missing: '+r.miss.join(', ')+'</div>':'<span class="t">সব ingredient আছে ✅</span>')+'</div>'});
+return h},
+ana:function(){var tot=0,m={},by={};S.waste.forEach(function(w){tot+=w.c;var k=w.d.slice(0,7);m[k]=(m[k]||0)+w.c;by[w.n]=(by[w.n]||0)+w.c});
+var top=Object.keys(by).sort(function(a,b){return by[b]-by[a]}),mx=top.length?by[top[0]]:1;
+var h='<div class="g"><div class="c"><div class="k" style="color:var(--rd)">'+money(tot)+'</div><div class="m">Total loss</div></div><div class="c"><div class="k">'+S.waste.length+'</div><div class="m">Waste entries</div></div></div><div class="c"><h3>📊 Loss by Food</h3>';
+top.forEach(function(n){h+='<div class="m">'+esc(n)+' — '+money(by[n])+'</div><div class="bar" style="width:'+Math.max(4,by[n]/mx*100)+'%;margin-bottom:6px"></div>'});
+h+='</div><div class="c"><h3>Monthly Loss</h3>';Object.keys(m).sort().forEach(function(k){h+='<div class="row"><span>'+k+'</span><b>'+money(m[k])+'</b></div>'});
+h+='</div><div class="c"><h3>Waste Log</h3>';S.waste.slice().reverse().slice(0,15).forEach(function(w){h+='<div class="row"><span>'+esc(w.n)+' ×'+w.q+' <span class="m">'+w.d+'</span></span><span style="color:var(--rd)">'+money(w.c)+'</span></div>'});
+return h+(S.waste.length?'':'<div class="m">No waste recorded 🎉</div>')+'</div>'},
+pred:function(){var h='<div class="c"><h3>📈 Smart Stock Prediction</h3><div class="m">গত ১৪ দিনের consumption দেখে আগামী ৭ দিনের requirement।</div>';var n=0;
+S.items.forEach(function(i){var d=daily(i.name);if(!d)return;n++;var need=d*7,left=i.qty/d;h+='<div class="row"><span>'+esc(i.name)+' <span class="m">avg '+d.toFixed(2)+'/day · stock '+i.qty+' '+esc(i.unit)+'</span></span><span>7d need: <b>'+need.toFixed(1)+'</b> '+(i.qty<need?'<span class="t r">কিনতে হবে '+Math.ceil(need-i.qty)+'</span>':'<span class="t">'+Math.floor(left)+' days চলবে</span>')+'</span></div>'});
+return h+(n?'':'<div class="m">Prediction এর জন্য "Use" দিয়ে consumption record করুন বা demo data load করুন।</div>')+'</div>'},
+don:function(){var l=S.items.filter(function(i){return dl(i)>=0&&(dl(i)<=3||i.qty>i.min*4)}),h='<div class="c"><h3>♻️ Surplus / Donation</h3><div class="m">৩ দিনের মধ্যে expire হবে বা অতিরিক্ত stock — ব্যবহারযোগ্য food donate করুন।</div>';
+l.forEach(function(i){h+='<div class="row"><span>'+nm(i)+' '+tag(i)+(i.qty>i.min*4?' <span class="t">Surplus</span>':'')+'</span><button class="b" onclick="donate('+i.id+')">Donate</button></div>'});
+h+=(l.length?'':'<div class="m">এখন donate করার মতো কিছু নেই</div>')+'</div><div class="c"><h3>Donation History</h3>';
+S.don.slice().reverse().forEach(function(x){h+='<div class="row"><span>'+esc(x.n)+' ×'+x.q+' '+esc(x.u)+' <span class="m">'+x.d+'</span></span><span class="t">'+money(x.c)+' saved</span></div>'});
+return h+(S.don.length?'':'<div class="m">No donations yet</div>')+'</div>'},
+shop:function(){var m={};S.items.forEach(function(i){var d=daily(i.name),need=Math.ceil(d*7-i.qty),b=0,r='';if(low(i)){b=Math.max(i.min*2-i.qty,1);r='Low stock'}if(need>b){b=need;r='Predicted'}if(b>0)m[i.id]={i:i,b:Math.ceil(b),r:r}});
+var ids=Object.keys(m),tot=0,h='<div class="c"><h3>🛒 Smart Shopping List</h3>';
+ids.forEach(function(k){var x=m[k],c=x.b*x.i.price;tot+=S.chk[k]?0:c;h+='<div class="row"><label><input type="checkbox" style="width:auto" '+(S.chk[k]?'checked':'')+' onchange="S.chk['+k+']=this.checked;save();draw()"> '+esc(x.i.name)+' — <b>'+x.b+' '+esc(x.i.unit)+'</b> <span class="t w">'+x.r+'</span></label><span class="m">'+money(c)+'</span></div>'});
+return h+(ids.length?'<div class="row"><b>Estimated total</b><b>'+money(tot)+'</b></div>':'<div class="m">Shopping list খালি ✅</div>')+'</div>'}};
+function add(f){var d=new FormData(f),g=function(k){return d.get(k)},id=Date.now(),it={id:id,name:g('name').trim(),qty:+g('qty'),unit:g('unit')||'pcs',min:+g('min')||0,price:+g('price'),exp:g('exp'),code:g('code')};
+S.items.push(it);if(it.code)S.cat[it.code]=[it.name,it.unit,it.min,it.price,Math.max(1,-dl(it))||5];save();draw();return false}
+function look(f){var c=f.code.value.trim(),p=S.cat[c]||DEMO[c];if(!p)return;f.name.value=p[0];f.unit.value=p[1];f.min.value=p[2];f.price.value=p[3];var d=today();d.setDate(d.getDate()+(DEMO[c]?p[4]:7));f.exp.value=ds(d);if(!f.qty.value)f.qty.value=1}
+async function cam(){if(!window.BarcodeDetector||!navigator.mediaDevices){alert('এই browser এ camera scan নেই — code manually লিখুন।');return}
+try{var st=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}),v=document.getElementById('vid'),bd=new BarcodeDetector();v.srcObject=st;v.style.display='block';await v.play();
+var t=setInterval(async function(){try{var r=await bd.detect(v);if(r.length){clearInterval(t);st.getTracks().forEach(function(x){x.stop()});v.style.display='none';var f=document.querySelector('form');f.code.value=r[0].rawValue;look(f)}}catch(e){}},400)}catch(e){alert('Camera access পাওয়া যায়নি')}}
+function find(id){return S.items.filter(function(i){return i.id==id})[0]}
+function rm(i){S.items=S.items.filter(function(x){return x.id!=i.id})}
+function use(id){var i=find(id),q=+prompt('কতটুকু ব্যবহার করলেন? ('+i.unit+')','1');if(!q||q<=0)return;q=Math.min(q,i.qty);i.qty=+(i.qty-q).toFixed(3);S.used.push({n:i.name,q:q,d:ds(today())});if(i.qty<=0)rm(i);save();draw()}
+function waste(id){var i=find(id);S.waste.push({n:i.name,q:i.qty,c:i.qty*i.price,d:ds(today())});rm(i);save();draw()}
+function donate(id){var i=find(id);S.don.push({n:i.name,q:i.qty,u:i.unit,c:i.qty*i.price,d:ds(today())});rm(i);save();draw()}
+function del(id){if(confirm('Delete?')){rm(find(id));save();draw()}}
+function demo(){var id=1;Object.keys(DEMO).forEach(function(c){var p=DEMO[c],d=today();d.setDate(d.getDate()+Math.min(p[4],[2,-1,1,2,30,4,6,3][id-1]||p[4]));S.items.push({id:Date.now()+id++,name:p[0],qty:p[2]*(id%2?1:3),unit:p[1],min:p[2],price:p[3],exp:ds(d),code:c});
+for(var k=1;k<=14;k++)S.used.push({n:p[0],q:+(p[2]*0.4*(0.6+((k*7+id)%5)/5)).toFixed(2),d:ago(k)})});
+S.waste.push({n:'Milk',q:2,c:180,d:ago(20)},{n:'Bread',q:3,c:150,d:ago(9)},{n:'Chicken',q:1,c:220,d:ago(3)},{n:'Tomato',q:2,c:120,d:ago(35)});save();draw()}
+draw();
+</script><div id="lg" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9;padding:20px;align-items:center;justify-content:center"><form onsubmit="login(this);return false" style="width:100%;max-width:320px;display:grid;grid-template-columns:1fr;gap:8px"><h3>🥗 FoodWise Login</h3><input name="u" placeholder="Username" value="admin"><input name="p" type="password" placeholder="Password"><button class="b" style="padding:9px">Login</button><div id="le" class="m"></div></form></div>
+<script>
+// ===== API layer: frontend now talks to the Express/SQLite backend =====
+var TOK=localStorage.getItem('fw_token')||'',A={expired:[],expiring:[],low:[]};S.foods=[];
+function save(){try{localStorage.setItem(KEY,JSON.stringify({chk:S.chk}))}catch(e){}}
+function lg(on){document.getElementById('lg').style.display=on?'flex':'none'}
+async function api(m,u,b){var r=await fetch('/api'+u,{method:m,headers:{'Content-Type':'application/json',Authorization:'Bearer '+TOK},body:b?JSON.stringify(b):undefined});
+if(r.status==401){lg(true);throw new Error('auth')}var j=await r.json().catch(function(){return{}});if(!r.ok){alert(j.error||'Error');throw new Error(j.error)}return j}
+async function login(f){try{var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:f.u.value,password:f.p.value})}),j=await r.json();
+if(!r.ok){document.getElementById('le').textContent=j.error;return}TOK=j.token;localStorage.setItem('fw_token',TOK);lg(false);refresh()}catch(e){document.getElementById('le').textContent='Server connect হচ্ছে না'}}
+function logout(){localStorage.removeItem('fw_token');TOK='';lg(true)}
+async function refresh(){try{var r=await Promise.all([api('GET','/inventory'),api('GET','/foods'),api('GET','/waste/analytics'),api('GET','/consumptions?days=14'),api('GET','/donations'),api('GET','/expiry-alerts?days=3')]);
+S.items=r[0];S.foods=r[1];S.waste=r[2].entries;S.used=r[3];S.don=r[4];A=r[5];draw()}catch(e){}}
+function low(i){return S.items.filter(function(x){return x.food_id==i.food_id}).reduce(function(s,x){return s+x.qty},0)<=i.min}
+function add(f){addX(f);return false}
+async function addX(f){var d=new FormData(f),g=function(k){return d.get(k)};try{var fd=await api('POST','/foods',{name:g('name').trim(),unit:g('unit')||'pcs',min_stock:+g('min')||0,unit_price:+g('price'),barcode:g('code')});
+await api('POST','/purchases',{food_id:fd.id,qty:+g('qty'),unit_price:+g('price'),expiry_date:g('exp')});f.reset();await refresh()}catch(e){}}
+function fill(f,n,u,m,pr,days){f.name.value=n;f.unit.value=u;f.min.value=m;f.price.value=pr;var d=today();d.setDate(d.getDate()+days);f.exp.value=ds(d);if(!f.qty.value)f.qty.value=1}
+function look(f){var c=f.code.value.trim(),p=S.foods.filter(function(x){return x.barcode==c})[0];if(p)fill(f,p.name,p.unit,p.min_stock,p.unit_price,7);else if(DEMO[c]){var q=DEMO[c];fill(f,q[0],q[1],q[2],q[3],q[4])}}
+function use(id){var i=find(id),q=+prompt('কতটুকু ব্যবহার করলেন? ('+i.unit+')','1');if(!q||q<=0)return;api('POST','/consumptions',{batch_id:id,qty:q}).then(refresh).catch(function(){})}
+function waste(id){api('POST','/waste',{batch_id:id}).then(refresh).catch(function(){})}
+function donate(id){api('POST','/donations',{batch_id:id}).then(refresh).catch(function(){})}
+function del(id){if(confirm('Delete?'))api('DELETE','/batches/'+id).then(refresh).catch(function(){})}
+function demo(){api('POST','/seed').then(refresh).catch(function(){})}
+V.dash=function(){var ex=A.expired,so=A.expiring,lo=A.low;
+var h='<div class="g"><div class="c"><div class="k">'+S.items.length+'</div><div class="m">Stock batches</div></div><div class="c"><div class="k" style="color:var(--rd)">'+ex.length+'</div><div class="m">Expired</div></div><div class="c"><div class="k" style="color:var(--wr)">'+so.length+'</div><div class="m">Expiring ≤3 days</div></div><div class="c"><div class="k">'+lo.length+'</div><div class="m">Low stock</div></div></div>';
+if(!S.foods.length)h+='<div class="c">কোনো data নেই। Stock tab এ item add করুন অথবা <button class="b" onclick="demo()">Demo data load</button></div>';
+h+='<div class="c"><h3>🔔 Smart Alerts</h3>';var n=0;
+ex.forEach(function(i){n++;h+='<div class="row"><span>⛔ '+nm(i)+' expire হয়ে গেছে</span><button class="b r" onclick="waste('+i.id+')">Waste log</button></div>'});
+so.forEach(function(i){n++;h+='<div class="row"><span>⏰ '+nm(i)+' '+tag(i)+'</span><span><button class="b w" onclick="go(\'rec\')">Recipe</button><button class="b o" onclick="go(\'don\')">Donate</button></span></div>'});
+lo.forEach(function(i){n++;h+='<div class="row"><span>📉 '+nm(i)+' stock কম (min '+i.min+')</span><button class="b" onclick="go(\'shop\')">Shopping</button></div>'});
+return h+(n?'':'<div class="m">সব ঠিক আছে ✅</div>')+'</div>'};
+var _shop=V.shop;V.shop=function(){var o=S.items,m={};o.forEach(function(i){if(!m[i.food_id])m[i.food_id]=Object.assign({},i,{id:i.food_id,qty:0});m[i.food_id].qty+=i.qty});
+S.foods.forEach(function(f){if(!m[f.id])m[f.id]={id:f.id,food_id:f.id,name:f.name,unit:f.unit,min:f.min_stock,price:f.unit_price,qty:0,exp:'2999-01-01'}});
+S.items=Object.keys(m).map(function(k){return m[k]});try{return _shop()}finally{S.items=o}};
+document.querySelector('header').insertAdjacentHTML('beforeend','<button class="b o" onclick="logout()">Logout</button>');
+S.items=[];S.waste=[];S.used=[];S.don=[];draw();if(TOK)refresh();else lg(true);
+</script>
+</body></html>
